@@ -1,0 +1,6 @@
+#!/bin/sh
+# $Id$
+
+defaults read loginwindow SystemVersionStampAsString
+
+# eof
