@@ -1,0 +1,14 @@
+#!/bin/sh
+# $Id$
+
+# The default system image is used if no arg is specified.
+# This is probably just equivalent to deleting the key.
+
+domain=/Library/Preferences/com.apple.loginwindow
+key='DesktopPicture'
+val=${1-/System/Library/CoreServices/DefaultDesktop.jpg}
+
+defaults write "$domain" "$key" -string "$val" \
+  && plutil -convert xml1 "$domain".plist
+
+# eof
