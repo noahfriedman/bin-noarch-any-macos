@@ -1,0 +1,35 @@
+#!/bin/sh
+# $Id$
+
+# In OSX 10.5 and later, this key has the following default value:
+#
+#    BSD =     {
+#        "/BSD/local" =         {
+#            "Deny Record Types" =             (
+#                "dsRecTypeStandard:Users",
+#                "dsRecTypeStandard:Groups"
+#            );
+#        };
+#    };
+#
+# When set this way, the /BSD/local map won't be consulted for users or
+# groups, even if master.passwd et all are present.
+
+domain=/Library/Preferences/DirectoryService/DSRecordTypeRestrictions
+key=BSD
+val='{ "/BSD/local" = { "Deny Record Types" = (); }; }'
+
+if [ -f $domain.plist ]; then
+  defaults write "$domain" "$key" -string "$val" \
+    && plutil -convert xml1 "$domain".plist
+else
+  # OSX 10.4 and earlier
+
+  mkdir -p /etc/lookupd
+  if [ -f /etc/lookupd/global ]; then
+    mv /etc/lookupd/global /etc/lookupd/global.orig
+    echo "LookupOrder Cache FF NI" > /etc/lookupd/global
+  fi
+fi
+
+# eof
