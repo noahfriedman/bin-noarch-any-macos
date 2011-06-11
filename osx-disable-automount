@@ -1,0 +1,17 @@
+#!/bin/sh
+# $Id$
+
+cd /System/Library/LaunchDaemons
+launchctl unload -w com.apple.autofsd.plist
+launchctl unload -w com.apple.automountd.plist
+
+cd /Library/LaunchDaemons
+defaults write `pwd`/local.mount_nfs '
+   { Label = "local.mount_nfs";
+     ProgramArguments = ( "mount", "-avt", "nfs" );
+   }'
+defaults write `pwd`/local.mount_nfs RunAtLoad -bool TRUE
+plutil -convert xml1 local.mount_nfs.plist
+launchctl load -w local.mount_nfs.plist
+
+# eof
