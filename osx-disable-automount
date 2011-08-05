@@ -1,17 +1,24 @@
 #!/bin/sh
-# $Id$
+# $Id: osx-disable-automount,v 1.1 2011/06/11 16:09:53 friedman Exp $
 
-cd /System/Library/LaunchDaemons
-launchctl unload -w com.apple.autofsd.plist
-launchctl unload -w com.apple.automountd.plist
+darwinver=`uname -r | sed 's/^\([0-9]*\)\..*/\1/'`
 
-cd /Library/LaunchDaemons
-defaults write `pwd`/local.mount_nfs '
-   { Label = "local.mount_nfs";
-     ProgramArguments = ( "mount", "-avt", "nfs" );
-   }'
-defaults write `pwd`/local.mount_nfs RunAtLoad -bool TRUE
-plutil -convert xml1 local.mount_nfs.plist
-launchctl load -w local.mount_nfs.plist
+sll=/System/Library/LaunchDaemons
+launchctl unload -w $sll/com.apple.autofsd.plist
+launchctl unload -w $sll/com.apple.automountd.plist
+
+plist=/Library/LaunchDaemons/local.mount_nfs
+defaults write $plist Label            -string local.mount_nfs
+defaults write $plist ProgramArguments -array  mount -avt nfs
+defaults write $plist RunAtLoad        -bool   TRUE
+
+if [ $darwinver -ge 10 ]; then
+  # This job may not always work the first time on snow leopard if it's run
+  # before com.apple.mDNSResponder is started.
+  defaults write $plist KeepAlive -dict SuccessfulExit -bool false
+fi
+
+plutil -convert xml1 $plist.plist
+launchctl load -w    $plist.plist
 
 # eof
