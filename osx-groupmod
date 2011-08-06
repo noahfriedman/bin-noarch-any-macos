@@ -1,0 +1,88 @@
+#!/bin/sh
+# osx-groupmod --- add, remove, or tweak groups on OSX
+# Author: Noah Friedman <friedman@splode.com>
+# Created: 2011-08-04
+# Public domain
+
+# $Id$
+
+# Commentary:
+# Code:
+
+nextgid()
+{
+  max=`dscl . -list /Groups PrimaryGroupID | sort -ug -k2,2 | sed -ne '${s/^.* //p;}'`
+  echo $(($max + 1))
+}
+
+groupadd()
+{
+  group=$1
+    gid=${2:-`nextgid`}
+
+  dscl . create /Groups/$group
+  dscl . create /Groups/$group Password '*'
+  dscl . create /Groups/$group PrimaryGroupID $gid
+}
+
+groupdel()
+{
+  group=$1
+  dscl . delete /Groups/$group
+}
+
+groupadduser()
+{
+  group=$1
+  shift
+
+  for user in "$@"; do
+    dscl . append /Groups/$group GroupMembership $user
+  done
+}
+
+groupdeluser()
+{
+  group=$1
+  shift
+
+  for user in "$@"; do
+    dscl . delete /Groups/$group GroupMembership $user
+  done
+}
+
+######
+##
+######
+
+usage()
+{
+  exec 1>&2
+
+  case $# in
+    0 ) : ;;
+    * ) echo $progname: "$@"; echo ;;
+  esac
+
+  echo "\
+Usage: $progname add [groupname] {gid}
+       $progname del [groupname]
+       $progname adduser [groupname] [user] {more users...}
+       $progname deluser [groupname] [user] {more users...}
+"
+  exit 1
+}
+
+main()
+{
+  progname=${0##*/}
+
+  case $1 in
+    add | del | adduser | deluser ) cmd=$1; shift; group$cmd "$@" ;;
+    * ) usage ;;
+  esac
+}
+
+main "$@"
+
+# eof
