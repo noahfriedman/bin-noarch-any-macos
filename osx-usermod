@@ -4,7 +4,7 @@
 # Created: 2011-08-04
 # Public domain
 
-# $Id$
+# $Id: osx-usermod,v 1.1 2011/08/06 01:13:47 friedman Exp $
 
 # Commentary:
 # Code:
@@ -30,10 +30,10 @@ useradd()
   dscl . create /Users/$user UniqueID         "$uid"
   dscl . create /Users/$user PrimaryGroupID   "$gid"
   dscl . create /Users/$user RealName         "$gecos"
-  dscl . create /Users/$user NFSHomeDirectory /Users/$user
+  dscl . create /Users/$user NFSHomeDirectory "$home"
   dscl . create /Users/$user UserShell        "$shell"
 
-  createhomedir -c -u $user
+  test -d "$home" || createhomedir -c -u $user
 }
 
 adminuseradd()
@@ -51,7 +51,7 @@ userdel()
   user=$1
 
   for group in `dscl . list /Groups`; do
-    dscl . delete /Groups/$group GroupMembership $user
+    dscl . delete /Groups/$group GroupMembership $user 2> /dev/null
   done
 
   dscl . delete /Users/$user
@@ -122,7 +122,7 @@ main()
   progname=${0##*/}
 
   case $1 in
-    add | del | hide ) cmd=$1; shift; cmd_$1 "$@" ;;
+    add | del | hide ) cmd=$1; shift; user$cmd "$@" ;;
     * ) usage ;;
   esac
 }
