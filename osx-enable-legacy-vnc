@@ -1,0 +1,15 @@
+#!/bin/sh
+# $Id$
+
+/System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart \
+    -activate \
+    -configure \
+    -access -on \
+    -privs -all \
+    -allowAccessFor -allUsers \
+    -clientopts -setvnclegacy -vnclegacy  yes \
+                -setvncpw     -vncpw      ${1-password} \
+    -activate \
+    -restart -agent -console -menu
+
+# eof
