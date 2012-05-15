@@ -1,15 +1,28 @@
 #!/bin/sh
-# $Id$
+# $Id: osx-enable-legacy-vnc,v 1.1 2011/10/02 01:35:31 friedman Exp $
 
 /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart \
+    -verbose \
     -activate \
+    \
     -configure \
-    -access -on \
-    -privs -all \
-    -allowAccessFor -allUsers \
-    -clientopts -setvnclegacy -vnclegacy  yes \
-                -setvncpw     -vncpw      ${1-password} \
-    -activate \
-    -restart -agent -console -menu
+      -access         -on \
+      -privs          -all \
+      -allowAccessFor -allUsers \
+    \
+    -clientopts \
+      -setmenuextra -menuextra yes \
+      -setdirlogins -dirlogins yes \
+      -setdirgroups -dirgroups everyone \
+    \
+      -setreqperm   -reqperm   yes \
+      -setvnclegacy -vnclegacy yes \
+      -setvncpw     -vncpw     "${1-password}" \
+      -setwbem      -wbem      yes \
+    \
+    -restart \
+      -agent \
+      -console \
+      -menu
 
 # eof
