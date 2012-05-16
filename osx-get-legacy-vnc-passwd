@@ -1,0 +1,40 @@
+#!/usr/bin/env perl
+# $Id$
+
+use strict;
+use Symbol;
+
+$^W = 1;
+
+my $default_pwfile = "/Library/Preferences/com.apple.VNCSettings.txt";
+
+sub enscramble
+{
+  my @c = unpack ("C*", shift);
+  my @e = map { (shift @c || 0) ^ (23 + ($_ * 29)) & 255 } (0 .. 15);
+  uc (unpack ("H*", pack ("C*", @e)));
+}
+
+sub unscramble
+{
+  my @e = unpack ("C*", pack ("H*", shift));
+  my @c = map { (shift @e || 0) ^ (23 + ($_ * 29)) & 255 } (0 .. 15);
+  local $_ = pack ("C*", @c);
+  s/\0+$//;
+  return $_;
+}
+
+sub main
+{
+  my $file = shift || $default_pwfile;
+  my $fh = gensym;
+  open ($fh, $file) || die "open: $file: $!\n";
+  local $_ = join ("", <$fh>);
+
+  my $un = unscramble ($_);
+  print $un, "\n";
+}
+
+main (@ARGV);
+
+# eof
