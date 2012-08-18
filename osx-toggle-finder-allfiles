@@ -1,0 +1,13 @@
+#!/bin/sh
+# $Id$
+
+cur=`defaults read com.apple.Finder AppleShowAllFiles 2> /dev/null`
+case $cur in
+  0 | '' ) new=TRUE  ;;
+  1 )      new=FALSE ;;
+esac
+
+defaults write com.apple.Finder AppleShowAllFiles -boolean $new \
+  && killall Finder
+
+# eof
