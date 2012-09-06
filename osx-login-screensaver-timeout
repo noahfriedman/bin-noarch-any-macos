@@ -1,0 +1,14 @@
+#!/bin/sh
+# $Id$
+
+domain=/Library/Preferences/com.apple.screensaver
+key=loginWindowIdleTime
+val=$1
+
+case $# in
+    0 ) defaults read "$domain" "$key" ;;
+    * ) defaults write "$domain" "$key" -integer "$val" \
+        && plutil -convert xml1 "$domain".plist ;;
+esac
+
+# eof
