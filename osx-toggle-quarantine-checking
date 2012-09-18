@@ -1,0 +1,6 @@
+#!/bin/sh
+# $Id$
+
+exec pref-set-boolean com.apple.LaunchServices LSQuarantine "$@"
+
+# eof

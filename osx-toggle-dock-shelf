@@ -1,15 +1,9 @@
 #!/bin/sh
-# $Id$
+# $Id: osx-toggle-dock-shelf,v 1.1 2008/12/03 01:34:54 friedman Exp $
 
 # Disable that horrible "3d" dock in 10.5 (Leopard)
 
-cur=`defaults read com.apple.dock no-glass 2> /dev/null`
-case $cur in
-  0 | '' ) new=TRUE  ;;
-  1 )      new=FALSE ;;
-esac
-
-defaults write com.apple.dock no-glass -boolean $new \
- && killall Dock
+pref-set-boolean com.apple.dock no-glass "$@" \
+    && killall Dock 2> /dev/null
 
 # eof

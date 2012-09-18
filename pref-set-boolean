@@ -1,0 +1,30 @@
+#!/bin/sh
+# $Id$
+
+
+domain=$1
+   key=$2
+   val=$3
+
+case $val in
+    '' | toggle )
+        cur=`defaults read "$domain" "$key" 2> /dev/null`
+        case $cur in
+            0 | '' ) val=true  ;;
+            1 )      val=false ;;
+        esac ;;
+    0 ) val=false ;;
+    1 ) val=true  ;;
+esac
+
+set -e
+
+defaults write "$domain" "$key" -boolean "$val"
+defaults read  "$domain" "$key" | sed -e 's/0/false/' -e 's/1/true/'
+
+# Keep system files readable
+case $domain in
+    /* ) plutil -convert xml1 "$domain".plist ;;
+esac
+
+# eof
