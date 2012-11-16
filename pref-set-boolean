@@ -1,10 +1,16 @@
 #!/bin/sh
-# $Id$
+# $Id: pref-set-boolean,v 1.1 2012/09/18 07:21:35 friedman Exp $
 
-
-domain=$1
+domain=${1%.plist}
    key=$2
    val=$3
+
+case $#:$key in
+  3:* ) : ;;
+  [01]:* | *:true | *:false | *:[01] )
+        echo "Usage: ${0##*/} [domain] [key] {val}" 1>&2
+        exit 1 ;;
+esac
 
 case $val in
     '' | toggle )
