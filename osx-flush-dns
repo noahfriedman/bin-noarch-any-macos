@@ -1,0 +1,15 @@
+#!/bin/sh
+# $Id$
+
+darwinver=`uname -r | sed 's/^\([0-9]*\)\..*/\1/'`
+
+#if   [ $darwinver -le 11 ]; then  # osx 10.7 and below
+#    # Not sure this is actually right.
+#    dnscacheutil --flush
+if [ $darwinver -le 13 ]; then	   # osx 10.8, 10.9
+    killall -HUP mDNSResponder
+else                               # osx 10.10 and later (so far)
+    discoveryutil mdnsflushcache
+fi
+
+# eof
