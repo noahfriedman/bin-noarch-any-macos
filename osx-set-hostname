@@ -1,0 +1,18 @@
+#!/bin/sh
+# $Id$
+
+plbset()
+{
+    /usr/libexec/PlistBuddy -c "set $1 $2" "${3-/Library/Preferences/SystemConfiguration/preferences.plist}"
+}
+
+fqdn=$1
+host=${1%%.*}
+
+plbset :System:System:HostName                 "$fqdn"
+plbset :System:System:ComputerName             "$host"
+plbset :System:Network:HostNames:LocalHostName "$host"
+
+defaults read /Library/Preferences/SystemConfiguration/preferences System
+
+# eof
