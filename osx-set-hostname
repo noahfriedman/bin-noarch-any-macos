@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id$
+# $Id: osx-set-hostname,v 1.1 2016/10/12 20:58:07 friedman Exp $
 
 plbset()
 {
@@ -13,6 +13,6 @@ plbset :System:System:HostName                 "$fqdn"
 plbset :System:System:ComputerName             "$host"
 plbset :System:Network:HostNames:LocalHostName "$host"
 
-defaults read /Library/Preferences/SystemConfiguration/preferences System
+networksetup -setcomputername "$fqdn"
 
 # eof
