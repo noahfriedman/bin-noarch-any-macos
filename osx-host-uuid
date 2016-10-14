@@ -1,0 +1,11 @@
+#!/bin/sh
+# $Id$
+
+uuid=`/usr/sbin/ioreg -rd1 -c IOPlatformExpertDevice | sed -ne '/IOPlatformUUID/s/.*"\(.*\)"$/\1/p'`
+case $uuid in
+    00000000-0000-1000-8000-* )
+        echo $uuid | sed -e 's/.*-//' -e 'y/ABCDEF/abcdef/' ;;
+    * ) echo $uuid ;;
+esac
+
+# eof
