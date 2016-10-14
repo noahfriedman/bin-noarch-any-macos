@@ -1,0 +1,14 @@
+#!/bin/sh
+# $Id$
+
+plb()
+{
+    /usr/libexec/PlistBuddy -c "$*" /Library/Preferences/SystemConfiguration/com.apple.Boot.plist
+}
+
+case $# in
+    0 ) plb 'print ":Kernel Flags"' ;;
+    * ) plb   'set ":Kernel Flags" '"$*" ;;
+esac
+
+# eof
