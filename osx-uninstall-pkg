@@ -1,0 +1,42 @@
+#!/bin/bash
+# $Id$
+# Quick and dirty package uninstaller
+
+instprefix()
+{
+    plist=/var/db/receipts/$1.plist
+    test -f "$plist" || return 1
+
+    echo -n /
+    /usr/libexec/PlistBuddy -c 'print :InstallPrefixPath' "$plist"
+}
+
+uninst()
+{
+    pkg=$1
+    dir=`instprefix "$pkg"`
+    case $dir in
+        /?* ) : ;;
+        *  ) return 1 ;;
+    esac
+
+    echo "Removing files from package $pkg"
+    pkgutil --files "$pkg" |
+        sort -r            |
+        while read ent; do
+            rm -vdf "$dir/$ent"
+        done
+
+    pkgutil --forget "$pkg"
+}
+
+main()
+{
+    for pkg in "$@"; do
+        uninst "$pkg"
+    done
+}
+
+main "$@"
+
+# eof
