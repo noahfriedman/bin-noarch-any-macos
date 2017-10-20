@@ -1,0 +1,21 @@
+#!/bin/sh
+# $Id$
+
+# This sets the timeout for the screensaver once the user is already logged
+# in, and is configured per-user and per-host (if home directories are
+# shared across machines).  These preferences are stored in
+# ~/Library/Preferences/ByHost/com.apple.screensaver.[uuid].plist
+#
+# To change the system-wide timeout when no user is logged in,
+# use "osx-login-screensaver-timeout".
+
+domain=com.apple.screensaver
+key=idleTime
+val=$1
+
+case $# in
+    0 ) defaults -currentHost read  "$domain" "$key" ;;
+    * ) defaults -currentHost write "$domain" "$key" -integer "$val" ;;
+esac
+
+# eof
