@@ -1,0 +1,21 @@
+#!/bin/sh
+# $Id$
+
+PM=/Library/Preferences/SystemConfiguration/com.apple.PowerManagement.plist
+SS=/Library/Preferences/com.apple.screensaver.plist
+
+plb_pm() { /usr/libexec/PlistBuddy -c "$*" "$PM"; }
+plb_ss() { /usr/libexec/PlistBuddy -c "$*" "$SS"; }
+
+# Keys with whitespace need to be quoted.
+plb_pm set "':Custom Profile:AC Power:Disk Sleep Timer'"    0
+plb_pm set "':Custom Profile:AC Power:Display Sleep Timer'" 0
+plb_pm set "':Custom Profile:AC Power:System Sleep Timer'"  0
+plb_ss set :loginWindowIdleTime                             0
+
+case $1 in
+    -v ) plb_pm print
+         plb_ss print ;;
+esac
+
+# eof
