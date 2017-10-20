@@ -1,11 +1,23 @@
-#!/bin/sh
+#!/usr/bin/env perl
 # $Id$
 
-uuid=`/usr/sbin/ioreg -rd1 -c IOPlatformExpertDevice | sed -ne '/IOPlatformUUID/s/.*"\(.*\)"$/\1/p'`
-case $uuid in
-    00000000-0000-1000-8000-* )
-        echo $uuid | sed -e 's/.*-//' -e 'y/ABCDEF/abcdef/' ;;
-    * ) echo $uuid ;;
-esac
+use strict;
+
+sub getuuid
+{
+  local $_ = `/usr/sbin/nvram platform-uuid`;
+  /(\S+)$/ and $_ = $1;
+  s/%([\da-f]{2})/chr(hex($1))/egi;
+  $_ = sprintf (join ("-", ('%*6$v02X') x 5),
+                substr ($_,  0, 4),
+                substr ($_,  4, 2),
+                substr ($_,  6, 2),
+                substr ($_,  8, 2),
+                substr ($_, 10), '');
+  return lc $1 if /^00000000-0000-1000-8000-(.*)/;
+  return $_;
+}
+
+print getuuid, "\n";
 
 # eof
