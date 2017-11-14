@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id$
+# $Id: osx-disable-power-mgmt,v 1.1 2017/10/20 22:25:25 friedman Exp $
 
 PM=/Library/Preferences/SystemConfiguration/com.apple.PowerManagement.plist
 SS=/Library/Preferences/com.apple.screensaver.plist
@@ -8,14 +8,29 @@ plb_pm() { /usr/libexec/PlistBuddy -c "$*" "$PM"; }
 plb_ss() { /usr/libexec/PlistBuddy -c "$*" "$SS"; }
 
 # Keys with whitespace need to be quoted.
-plb_pm set "':Custom Profile:AC Power:Disk Sleep Timer'"    0
-plb_pm set "':Custom Profile:AC Power:Display Sleep Timer'" 0
-plb_pm set "':Custom Profile:AC Power:System Sleep Timer'"  0
-plb_ss set :loginWindowIdleTime                             0
+modify()
+{
+    plb_pm set "':Custom Profile:AC Power:Disk Sleep Timer'"    ${1-0}
+    plb_pm set "':Custom Profile:AC Power:Display Sleep Timer'" ${2-0}
+    plb_pm set "':Custom Profile:AC Power:System Sleep Timer'"  ${3-0}
+    plb_ss set :loginWindowIdleTime                             ${4-0}
+}
+
+create()
+{
+    plb_pm add '":Custom Profile:AC Power:Disk Sleep Timer"'    integer ${1-0}
+    plb_pm add '":Custom Profile:AC Power:Display Sleep Timer"' integer ${2-0}
+    plb_pm add '":Custom Profile:AC Power:System Sleep Timer"'  integer ${3-0}
+    plb_ss add :loginWindowIdleTime                             integer ${4-0}
+}
 
 case $1 in
     -v ) plb_pm print
          plb_ss print ;;
+
+    create | modify ) fn=$1; shift; $fn "$@" ;;
+
+    * ) modify "$@" ;;
 esac
 
 # eof
