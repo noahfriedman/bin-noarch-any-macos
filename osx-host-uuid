@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# $Id$
+# $Id: osx-host-uuid,v 1.2 2017/10/20 22:12:12 friedman Exp $
 
 use strict;
 
@@ -8,14 +8,9 @@ sub getuuid
   local $_ = `/usr/sbin/nvram platform-uuid`;
   /(\S+)$/ and $_ = $1;
   s/%([\da-f]{2})/chr(hex($1))/egi;
-  $_ = sprintf (join ("-", ('%*6$v02X') x 5),
-                substr ($_,  0, 4),
-                substr ($_,  4, 2),
-                substr ($_,  6, 2),
-                substr ($_,  8, 2),
-                substr ($_, 10), '');
+  $_ = join ("-", unpack ('H8H4H4H4H12', $_));
   return lc $1 if /^00000000-0000-1000-8000-(.*)/;
-  return $_;
+  return uc $_;
 }
 
 print getuuid, "\n";
