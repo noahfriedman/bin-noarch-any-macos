@@ -1,0 +1,18 @@
+#!/bin/sh
+# $Id$
+
+# WQ is not the same as the total number of threads.
+# The ps command doesn't seem have an option to display total threads.
+fields="user,pid,ppid,pgid,wq,%cpu,%mem,ni,vsz,rss,tt,stat,start=STIME,time,command"
+
+a=-a
+for arg in "$@"; do
+    case $arg in
+        -[rm] ) :  ;; # these just change sorting
+        -*    ) a= ;; # any other -flag disables default -a
+    esac
+done
+
+ps -xww $a -o "$fields" "$@" | fgrep -v -e "$fields" -e "$0"
+
+# eof

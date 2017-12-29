@@ -1,0 +1,7 @@
+#!/bin/sh
+# $Id$
+
+# Show all processes for current user
+exec psa -u ${USER-${LOGNAME}} "$@"
+
+# eof
