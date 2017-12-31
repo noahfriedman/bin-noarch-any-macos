@@ -1,0 +1,184 @@
+#!/bin/sh
+# plist --- read or manipulate plist files
+# Author: Noah Friedman <friedman@splode.com>
+# Created: 2017-12-30
+# Public domain
+
+# $Id$
+
+# Commentary:
+# Code:
+
+get_domain_fqp()
+{
+    local pl=${1%.plist}.plist  # make sure it ends in .plist
+    shift
+    case $pl in
+        /* | ./* | ../* ) : ;;
+        * ) case ${UID-`id -u`} in
+                0 )      pl=/Library/Preferences/$pl ;;
+                * ) pl=$HOME/Library/Preferences/$pl ;;
+            esac ;;
+    esac
+    domain=$pl
+}
+
+apop() { eval "$1=(\"\${$1[@]:0:\${#$1[@]}-${2-1}}\")"; }
+aref() { eval echo "\"\${$1[$2]}\""; }
+
+plb() { /usr/libexec/PlistBuddy -c "$*" "$domain"; }
+
+plclear()  { plb clear "$@" ; }
+plprint()  { plb print  "\":$*\"" ; }
+pldelete() { plb delete "\":$*\"" ; }
+plcopy()   { plb copy   "\":$1\""  "\":$2\"" ; }
+plmerge()  { plb merge   "\"$1\""  "\":$2\"" ; }
+plimport() { plb import "\":$1\""   "\"$2\"" ; }
+
+plset() { plwrite "$@" ; }
+pladd() { plwrite "$@" ; }
+
+plwrite()
+{
+    test -d "${domain%/*}" || mkdir -p "${domain%/*}"
+
+    local verb=
+    case $1 in
+        add | set ) verb=$1 ; shift ;;
+    esac
+
+    local key=$1
+    shift
+
+    if ! [ -f "$domain" ] ; then
+        plclear > /dev/null 2>&1  # quietly create file
+    fi
+
+    case $key in
+        *:  ) vivify "$key"
+              verb=add ;;
+
+        *:* ) if numberp  "${key##*:}"
+              then vivify "${key}"
+              else vivify "${key%:*}"
+              fi ;;
+    esac
+
+    if [ -z "$verb" ]; then
+        if plprint "$key" > /dev/null 2>&1; then
+            verb=set
+        else
+            verb=add
+        fi
+    fi
+
+    local type=
+    case $verb:$# in
+        add:1 ) case $1 in
+                    array | dict ) : ;;
+                    true | false ) type=bool    ;;
+                    *[^0-9]*     ) type=string  ;;
+                    *            ) type=integer ;;
+                esac ;;
+        set:1 ) case $1 in
+                    # container already exists
+                    array | dict ) return ;;
+                esac ;;
+    esac
+
+    plb "$verb \":$key\" $type $*"
+}
+
+vivify()
+{
+    local oIFS=$IFS
+    IFS=:
+    case "$*" in
+        *: ) set . $*: ;;  # to save trailing empty string
+        *  ) set . $*  ;;
+    esac
+    IFS=$oIFS
+
+    local sub=$2  # skip "."
+    shift 2
+
+    while [ $# -gt 0 ]; do
+        if numberp "$1" && ! plb print ":$sub" ; then
+            plb add ":$sub" array 2> /dev/null
+        fi
+        sub=$sub:$1
+        shift
+    done > /dev/null 2>&1
+}
+
+numberp()
+{
+    case $1 in
+        *[^0-9]* ) return 1 ;;
+        * | ''   ) return 0 ;;
+    esac
+}
+
+usage()
+{
+    local prog=${0##*/}
+
+    exec 1>&2
+    if [ $# -gt 0 ]; then
+        echo "$prog: $*"
+        echo
+    fi
+
+    cat <<- __EOF__
+	Usage: $prog [DOMAIN] [COMMAND] {ARGS ...}
+
+	DOMAIN is the plist file to operate on.
+	If file is not absolute, the DOMAIN will be looked up under
+	~/Library/Preferences or (if root) /Library/Preferences.
+
+	COMMAND and ARGS can be of the form:
+
+	    print   {key}                      # will print whole dict without arg
+	    add     [key] {type} [value ...]   # type will be inferenced if missing
+	    set     [key] [value ...]          # key will be created if missing
+	    delete  [key]
+
+	    clear   [type]                     # see PlistBuddy man page for these
+	    copy    [srckey] [dstkey]
+	    merge   [file] {entry}
+	    import  [entry] [file]
+
+	__EOF__
+
+    exit 1
+}
+
+main()
+{
+    case $#:$1 in
+        0: | 1:-h | 1:--help ) usage ;;
+    esac
+
+    get_domain_fqp "$1"
+    shift
+
+    local verb=$1
+    shift
+
+    case $verb in
+        add   | set  | print | delete ) pl$verb "$@" ;;
+        clear | copy | merge | import ) pl$verb "$@" ;;
+
+        # Some aliases
+        get | read ) plprint     "$@" ;;
+        del        ) pldelete    "$@" ;;
+        force-add  ) plwrite add "$@" ;;  # force op
+        force-set  ) plwrite set "$@" ;;  # force op
+
+        * ) usage "$verb: unknown operator" ;;
+    esac
+}
+
+main "$@"
+
+# eof
