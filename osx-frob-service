@@ -1,0 +1,36 @@
+#!/bin/sh
+# $Id$
+
+do_enable()
+{
+    for arg in "$@"; do
+        pl=/System/Library/LaunchDaemons/$arg.plist
+        label=`/usr/libexec/PlistBuddy -c "print :Label" $pl`
+        launchctl load -w $pl
+    done
+}
+
+do_disable()
+{
+    for arg in "$@"; do
+        pl=/System/Library/LaunchDaemons/$arg.plist
+        label=`/usr/libexec/PlistBuddy -c "print :Label" $pl`
+        launchctl stop $label
+        launchctl load -w $pl
+    done
+}
+
+main()
+{
+    local cmd=$1
+    shift
+
+    case $# in
+        0 ) echo Usage: ${0##*/} [enable|disable]  com.apple.whatever
+            exit 1 ;;
+    esac
+
+    do_$cmd "$@"
+}
+
+# eof
