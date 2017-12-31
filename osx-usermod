@@ -4,66 +4,76 @@
 # Created: 2011-08-04
 # Public domain
 
-# $Id: osx-usermod,v 1.1 2011/08/06 01:13:47 friedman Exp $
+# $Id: osx-usermod,v 1.2 2011/08/06 01:22:08 friedman Exp $
 
 # Commentary:
 # Code:
 
 nextuid()
 {
-  max=`dscl . -list /Users UniqueID | sort -ug -k2,2 | sed -ne '${s/^.* //p;}'`
-  echo $(($max + 1))
+    max=`dscl . -list /Users UniqueID | sort -ug -k2,2 | sed -ne '${s/^.* //p;}'`
+    echo $(($max + 1))
 }
 
 useradd()
 {
-    user=$1
-  passwd=$2
-     uid=${3:-`nextuid`}
-     gid=${4:-20}
-   gecos=$5
-    home=${6:-/Users/$user}
-   shell=${7:-/bin/bash}
+      user=$1
+    passwd=$2
+       uid=${3:-`nextuid`}
+       gid=${4:-20}
+     gecos=$5
+      home=${6:-/Users/$user}
+     shell=${7:-/bin/bash}
 
-  dscl . create /Users/$user
-  dscl . passwd /Users/$user                  "$passwd"
-  dscl . create /Users/$user UniqueID         "$uid"
-  dscl . create /Users/$user PrimaryGroupID   "$gid"
-  dscl . create /Users/$user RealName         "$gecos"
-  dscl . create /Users/$user NFSHomeDirectory "$home"
-  dscl . create /Users/$user UserShell        "$shell"
+    dscl . create /Users/$user
+    dscl . passwd /Users/$user                  "$passwd"
+    dscl . create /Users/$user UniqueID         "$uid"
+    dscl . create /Users/$user PrimaryGroupID   "$gid"
+    dscl . create /Users/$user RealName         "$gecos"
+    dscl . create /Users/$user NFSHomeDirectory "$home"
+    dscl . create /Users/$user UserShell        "$shell"
 
-  test -d "$home" || createhomedir -c -u $user
+    case $home in
+        /Users/* )
+            if ! [ -d "$home" ]; then
+                createhomedir -c -u $user
+            fi ;;
+    esac
 }
 
 adminuseradd()
 {
-  useradd "$@"
+    useradd "$@"
 
-  admin_groups="admin _lpadmin _appserveradm _appserverusr"
-  for group in $admin_groups; do
-    dscl . append /Groups/$group GroupMembership $user
-  done
+    admin_groups="admin _lpadmin _appserveradm _appserverusr"
+    for group in $admin_groups; do
+        dscl . append /Groups/$group GroupMembership $user
+    done
 }
 
 userdel()
 {
-  user=$1
+    user=$1
 
-  for group in `dscl . list /Groups`; do
-    dscl . delete /Groups/$group GroupMembership $user 2> /dev/null
-  done
+    for group in `dscl . list /Groups`; do
+        dscl . delete /Groups/$group GroupMembership $user 2> /dev/null
+    done
 
-  dscl . delete /Users/$user
+    dscl . delete /Users/$user
 }
 
 userhide()
 {
-  plist=/Library/Preferences/com.apple.loginwindow
-  defaults write $plist Hide500Users           -bool true
-  defaults write $plist SHOWOTHERUSERS_MANAGED -bool false
-  defaults write $plist HiddenUsersList -array $1
-  plutil -convert xml1 $plist.plist
+    for user in "$@"; do
+        dscl . create /Users/$user IsHidden 1
+    done
+}
+
+userunhide()
+{
+    for user in "$@"; do
+        dscl . delete /Users/$user IsHidden
+    done
 }
 
 ######
@@ -72,59 +82,53 @@ userhide()
 
 usage()
 {
-  exec 1>&2
+    progname=${0##*/}
 
-  case $# in
-    0 ) : ;;
-    * ) echo $progname: "$@"; echo ;;
-  esac
+    exec 1>&2
+    case $# in
+        0 ) : ;;
+        * ) echo $progname: "$@"; echo ;;
+    esac
 
-  echo "\
+    echo "\
 Usage: $progname add  {-admin} [username] [passwd] [uid] [gid] {gcos} {homedir} {shell}
        $progname del           [username]
        $progname hide          [username]
 "
-  exit 1
+    exit 1
 }
 
 cmd_add()
 {
-  cmd=useradd
-  case $1 in
-    -admin ) cmd=admin$cmd ; shift ;;
-  esac
+    cmd=useradd
+    case $1 in
+        -admin ) cmd=admin$cmd ; shift ;;
+    esac
 
-  case $# in
-    [0-4] ) usage ;;
-  esac
+    case $# in
+        [0-4] ) usage ;;
+    esac
 
-  $cmd "$@"
+    $cmd "$@"
 }
 
 cmd_del()
 {
-  case $# in
-    1 ) userdel "$@" ;;
-    * ) usage ;;
-  esac
+    case $# in
+        1 ) userdel "$@" ;;
+        * ) usage ;;
+    esac
 }
 
-cmd_hide()
-{
-  case $# in
-    1 ) userhide "$@" ;;
-    * ) usage ;;
-  esac
-}
+cmd_hide()   { userhide   "$@"; }
+cmd_unhide() { userunhide "$@"; }
 
 main()
 {
-  progname=${0##*/}
-
-  case $1 in
-    add | del | hide ) cmd=$1; shift; user$cmd "$@" ;;
-    * ) usage ;;
-  esac
+    case $1 in
+        add | del | hide | unhide ) cmd=$1; shift; cmd_$cmd "$@" ;;
+        * ) usage ;;
+    esac
 }
 
 main "$@"
