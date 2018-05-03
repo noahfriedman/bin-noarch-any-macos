@@ -4,10 +4,12 @@
 # Created: 2017-12-30
 # Public domain
 
-# $Id$
+# $Id: plist,v 1.1 2017/12/31 05:37:41 friedman Exp $
 
 # Commentary:
 # Code:
+
+opt_x=
 
 get_domain_fqp()
 {
@@ -21,12 +23,16 @@ get_domain_fqp()
             esac ;;
     esac
     domain=$pl
+
+    if ! [ -f "$domain" ] && [ -f "${domain%.plist}" ]; then
+        domain=${domain%.plist}
+    fi
 }
 
 apop() { eval "$1=(\"\${$1[@]:0:\${#$1[@]}-${2-1}}\")"; }
 aref() { eval echo "\"\${$1[$2]}\""; }
 
-plb() { /usr/libexec/PlistBuddy -c "$*" "$domain"; }
+plb() { /usr/libexec/PlistBuddy $opt_x -c "$*" "$domain"; }
 
 plclear()  { plb clear "$@" ; }
 plprint()  { plb print  "\":$*\"" ; }
@@ -156,7 +162,8 @@ usage()
 main()
 {
     case $#:$1 in
-        0: | 1:-h | 1:--help ) usage ;;
+        0: | 1:-[hx] | 1:--help ) usage ;;
+        *:-x ) opt_x=-x ; shift ;;
     esac
 
     get_domain_fqp "$1"
