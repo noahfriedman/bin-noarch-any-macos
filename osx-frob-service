@@ -1,22 +1,41 @@
 #!/bin/sh
-# $Id$
+# $Id: osx-frob-service,v 1.1 2017/12/31 05:55:41 friedman Exp $
+
+get_pl()
+{
+    for dir in /Library/LaunchDaemons /System/Library/LaunchDaemons; do
+        for file in "$dir/$1" "$dir/$1.plist"; do
+            if [ -f "$file" ]; then
+                echo "$file"
+                return 0
+            fi
+        done
+    done
+    return 1
+}
+
+get_label()
+{
+    /usr/libexec/PlistBuddy -c "print :Label" "$1"
+}
 
 do_enable()
 {
     for arg in "$@"; do
-        pl=/System/Library/LaunchDaemons/$arg.plist
-        label=`/usr/libexec/PlistBuddy -c "print :Label" $pl`
-        launchctl load -w $pl
+        pl=`get_pl "$arg"`
+        label=`get_label "$pl"`
+        launchctl load -w "$pl"
+        launchctl start "$label"
     done
 }
 
 do_disable()
 {
     for arg in "$@"; do
-        pl=/System/Library/LaunchDaemons/$arg.plist
-        label=`/usr/libexec/PlistBuddy -c "print :Label" $pl`
-        launchctl stop $label
-        launchctl load -w $pl
+        pl=`get_pl "$arg"`
+        label=`get_label "$pl"`
+        launchctl stop "$label"
+        launchctl unload -w "$pl"
     done
 }
 
@@ -32,5 +51,7 @@ main()
 
     do_$cmd "$@"
 }
+
+main "$@"
 
 # eof
