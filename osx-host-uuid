@@ -1,14 +1,22 @@
 #!/usr/bin/env perl
-# $Id: osx-host-uuid,v 1.2 2017/10/20 22:12:12 friedman Exp $
+# $Id: osx-host-uuid,v 1.3 2017/12/13 01:02:00 friedman Exp $
 
 use strict;
 
 sub getuuid
 {
-  local $_ = `/usr/sbin/nvram platform-uuid`;
-  /(\S+)$/ and $_ = $1;
-  s/%([\da-f]{2})/chr(hex($1))/egi;
-  $_ = join ("-", unpack ('H8H4H4H4H12', $_));
+  local $_ = `/usr/sbin/nvram platform-uuid 2>/dev/null`;
+  if ($? == 0)
+    {
+      /(\S+)$/ and $_ = $1;
+      s/%([\da-f]{2})/chr(hex($1))/egi;
+      $_ = join ("-", unpack ('H8H4H4H4H12', $_));
+    }
+  else
+    {
+      $_ = `/usr/sbin/ioreg -rd1 -c IOPlatformExpertDevice 2>/dev/null`;
+      /IOPlatformUUID.\s*=\s*"(.*?)"/ and $_ = $1;
+    }
   return lc $1 if /^00000000-0000-1000-8000-(.*)/;
   return uc $_;
 }
