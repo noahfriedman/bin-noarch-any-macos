@@ -1,0 +1,7 @@
+#!/bin/sh
+# $Id$
+
+pref-set-boolean com.apple.desktopservices DSDontWriteNetworkStores "$@"
+pref-set-boolean com.apple.desktopservices DSDontWriteUSBStores     "$@"
+
+# eof
