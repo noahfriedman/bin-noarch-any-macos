@@ -1,0 +1,64 @@
+#!/bin/bash
+
+apush() { eval "$1=(\"\${$1[@]}\" \"\${@:2}\")"; }
+
+needed()
+{
+    objdump=${OBJDUMP-objdump}
+
+    objdump --macho --private-headers "$1" |
+        {
+            declare -a load=() rpath=() id=() misc=()
+
+            while read key val rest; do
+                case $key:$val in
+                    Load:command      )         valtype=      ;;
+
+                    cmd:LC_ID_DYLIB   )         valtype=id    ;;
+                    cmd:LC_RPATH      )         valtype=rpath ;;
+                    cmd:LC_LOAD_DYLIB )         valtype=load  ;;
+                    cmd:LC_BUILD_VERSION )      valtype=misc  ;;
+                    cmd:LC_VERSION_MIN_MACOSX ) valtype=misc  ;;
+                    cmd:*             )         valtype=      ;;
+
+                    name:* | path:* )
+                        case $valtype:$key in
+                               id:name   ) apush $valtype    "ID=$val" ;;
+                            rpath:path   ) apush $valtype "RPATH=$val" ;;
+                             load:name   ) apush $valtype       "$val" ;;
+                        esac ;;
+
+                    sdk:* | minos:* | version:* )
+                        case $valtype:$key in
+                            misc:sdk     ) apush $valtype "SDK=$val" ;;
+                            misc:minos   ) apush $valtype "MIN=$val" ;;
+                            misc:version ) apush $valtype "MIN=$val" ;;
+                        esac ;;
+                esac
+            done
+
+            for elt in "${load[@]}" "${rpath[@]}" "${id[@]}" "${misc[@]}"; do
+                echo "$elt"
+            done
+        }
+}
+
+main()
+{
+  case $# in
+    0 ) echo "Usage: $0 [files ...]" 1>&2
+        exit 1 ;;
+
+    1 ) needed "$1" ;;
+
+    * ) for f in "$@"; do
+          echo "$f:"
+          needed "$f" | sed -e 's/^/	/'
+          echo
+        done ;;
+  esac
+}
+
+main "$@"
+
+# eof
