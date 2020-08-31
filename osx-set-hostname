@@ -9,10 +9,12 @@ plbset()
 fqdn=$1
 host=${1%%.*}
 
-plbset :System:System:HostName                 "$fqdn"
-plbset :System:System:ComputerName             "$host"
-plbset :System:Network:HostNames:LocalHostName "$host"
+# plbset :System:System:HostName                 "$fqdn"
+# plbset :System:System:ComputerName             "$host"
+# plbset :System:Network:HostNames:LocalHostName "$host"
 
+# It's better to do this with the official methods.
+scutil --set HostName "$fqdn"
 networksetup -setcomputername "$fqdn"
 
 # eof
