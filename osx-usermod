@@ -4,8 +4,6 @@
 # Created: 2011-08-04
 # Public domain
 
-# $Id: osx-usermod,v 1.2 2011/08/06 01:22:08 friedman Exp $
-
 # Commentary:
 # Code:
 
@@ -25,41 +23,56 @@ useradd()
       home=${6:-/Users/$user}
      shell=${7:-/bin/bash}
 
-    dscl . create /Users/$user
-    dscl . passwd /Users/$user                  "$passwd"
-    dscl . create /Users/$user UniqueID         "$uid"
-    dscl . create /Users/$user PrimaryGroupID   "$gid"
-    dscl . create /Users/$user RealName         "$gecos"
-    dscl . create /Users/$user NFSHomeDirectory "$home"
-    dscl . create /Users/$user UserShell        "$shell"
+     set sysadminctl \
+         -addUser  "$user"   \
+         -password "$passwd" \
+         -UID      "$uid"    \
+         -GID      "$gid"    \
+         -fullName "$gecos"  \
+         -shell    "$shell"
 
-    case $home in
-        /Users/* )
-            if ! [ -d "$home" ]; then
-                createhomedir -c -u $user
-            fi ;;
-    esac
+     # sysadminctl will not create the home directory if it's specified
+     # here, even if it doesn't exist yet or is under /Users.
+     # Furthermore, createhomedir doesn't work at all, at least in OS 12.
+     case $home in
+         /Users/$user ) : ;;
+         * ) set "$@" -home "$home" ;;
+     esac
+
+     "$@" $admin
 }
 
 adminuseradd()
 {
+      user=$1
+    passwd=$2
+    admin=-admin
     useradd "$@"
 
-    admin_groups="admin _lpadmin _appserveradm _appserverusr"
+    admin_groups="wheel staff admin"
     for group in $admin_groups; do
-        dscl . append /Groups/$group GroupMembership $user
+        dseditgroup -o edit -a $user -t user $group
     done
+
+    # Users without secureToken are still limited in certain operations.
+    # Secure tokens can only be granted by accounts who already have one.
+    # The initial secure token is granted to the first user created on the
+    # system during first-time setup.
+    # This copies the secure token from root to the new admin user.
+    # TODO: add a switch to enable this selectively
+    #sysadminctl -adminUser root -adminPassword - -secureTokenOn "$user" -password "$passwd" -interactive
 }
 
 userdel()
 {
     user=$1
+    shift
 
     for group in `dscl . list /Groups`; do
         dscl . delete /Groups/$group GroupMembership $user 2> /dev/null
     done
 
-    dscl . delete /Users/$user
+    sysadminctl -deleteUser $user "$@"
 }
 
 userhide()
