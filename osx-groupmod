@@ -4,8 +4,6 @@
 # Created: 2011-08-04
 # Public domain
 
-# $Id: osx-groupmod,v 1.1 2011/08/06 01:13:47 friedman Exp $
-
 # Commentary:
 # Code:
 
@@ -27,7 +25,8 @@ groupadd()
 
 groupdel()
 {
-    dscl . delete /Groups/$1
+    group=$1
+    dscl . delete /Groups/$group
 }
 
 groupadduser()
